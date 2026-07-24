@@ -4,24 +4,10 @@ import 'package:provider/provider.dart';
 void main() {
   runApp(
     ChangeNotifierProvider(
-      create: (context) => ThemeModel(),
+      create: (_) => ThemeModel(),
       child: const MyApp(),
-    )
+    ),
   );
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final themeModel = Provider.of<ThemeModel>(context);
-
-    return MaterialApp(
-      theme: themeModel.isDark ? ThemeData.dark() : ThemeData.light(),
-      home: const MyHome(),
-    );
-  }
 }
 
 class ThemeModel extends ChangeNotifier {
@@ -35,8 +21,38 @@ class ThemeModel extends ChangeNotifier {
   }
 }
 
-class MyHome extends StatelessWidget {
-  const MyHome({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final themeModel = Provider.of<ThemeModel>(context);
+
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: themeModel.isDark
+          ? ThemeData.dark()
+          : ThemeData.light(),
+      home: const MyHomePage(),
+    );
+  }
+}
+
+class MyHomePage extends StatefulWidget {
+  const MyHomePage({super.key});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +60,33 @@ class MyHome extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('App State Example'),
+        title: const Text('State Management Example'),
         actions: [
           Switch(
             value: themeModel.isDark,
-            onChanged: (_) => themeModel.toggleTheme()
+            onChanged: (_) {
+              themeModel.toggleTheme();
+            },
           ),
         ],
       ),
       body: Center(
-        child: const Text('Toggle the theme using the switch in the app bar.'),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'You have pushed the button this many times:',
+            ),
+            Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _incrementCounter,
+        child: const Icon(Icons.add),
       ),
     );
   }
