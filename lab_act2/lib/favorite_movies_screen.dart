@@ -46,10 +46,14 @@ class FavoriteMoviesScreen extends StatelessWidget {
           final favorites = favoritesProvider.favorites;
 
           if (favorites.isEmpty) {
-            return const Center(
-              child: Text(
-                'No favorite movies yet.',
-                style: TextStyle(fontSize: 18),
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border, size: 64, color: Colors.grey.shade600),
+                  const SizedBox(height: 12),
+                  Text('No favorite movies yet.', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 18, color: Colors.white)),
+                ],
               ),
             );
           }
@@ -57,18 +61,27 @@ class FavoriteMoviesScreen extends StatelessWidget {
           return ListView.separated(
             padding: const EdgeInsets.symmetric(vertical: 12),
             itemCount: favorites.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
+            separatorBuilder: (context, index) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final movie = favorites[index];
 
-              return ListTile(
-                title: Text(movie.title),
-                subtitle: Text('${movie.genre} • ${movie.year}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    favoritesProvider.removeFavorite(movie);
-                  },
+              return Card(
+                color: const Color(0xFF111111),
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: Text(movie.title.substring(0, 1), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  ),
+                  title: Text(movie.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                  subtitle: Text('${movie.genre} • ${movie.year}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[400])),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    onPressed: () {
+                      favoritesProvider.removeFavorite(movie);
+                    },
+                  ),
                 ),
               );
             },

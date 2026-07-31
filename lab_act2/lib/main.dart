@@ -13,13 +13,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final seed = const Color(0xFF2EC4B6); // accent green
+
     return ChangeNotifierProvider(
       create: (_) => FavoritesProvider(),
       child: MaterialApp(
         title: 'Movie Favorites',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.dark),
+          scaffoldBackgroundColor: const Color(0xFF0B0B0B),
           useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Color(0xFF0B0B0B),
+            elevation: 0,
+            centerTitle: true,
+          ),
         ),
         home: const MovieListScreen(),
       ),

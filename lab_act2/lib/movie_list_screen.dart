@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'favorite_movies_screen.dart';
 import 'movie_provider.dart';
 
@@ -7,12 +8,12 @@ class MovieListScreen extends StatelessWidget {
   const MovieListScreen({super.key});
 
   static const movies = <Movie>[
-    Movie(title: 'The Shawshank Redemption', genre: 'Drama', year: '1994'),
-    Movie(title: 'Inception', genre: 'Sci-Fi', year: '2010'),
-    Movie(title: 'The Dark Knight', genre: 'Action', year: '2008'),
-    Movie(title: 'Parasite', genre: 'Thriller', year: '2019'),
-    Movie(title: 'The Matrix', genre: 'Sci-Fi', year: '1999'),
-    Movie(title: 'La La Land', genre: 'Musical', year: '2016'),
+    Movie(title: '22 Jump Street', genre: 'Comedy / Action', year: '2012'),
+    Movie(title: 'White Chicks', genre: 'Comedy / Crime', year: '2004'),
+    Movie(title: 'The Hunger Games', genre: 'Action / Adventure', year: '2012'),
+    Movie(title: 'The Maze Runner', genre: 'Sci-Fi / Action', year: '2014'),
+    Movie(title: 'How to Lose a Guy in 10 Days', genre: 'Romance / Comedy', year: '2003'),
+    Movie(title: 'As Above, So Below', genre: 'Horror / Adventure', year: '2014'),
   ];
 
   @override
@@ -39,22 +40,26 @@ class MovieListScreen extends StatelessWidget {
       body: ListView.separated(
         padding: const EdgeInsets.symmetric(vertical: 12),
         itemCount: movies.length,
-        separatorBuilder: (context, index) => const Divider(height: 1),
+        separatorBuilder: (context, index) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final movie = movies[index];
           final isFavorite = favoritesProvider.isFavorite(movie);
 
-          return ListTile(
-            title: Text(movie.title),
-            subtitle: Text('${movie.genre} • ${movie.year}'),
-            trailing: IconButton(
-              icon: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : null,
+          return Card(
+            color: const Color(0xFF111111),
+            margin: const EdgeInsets.symmetric(horizontal: 12),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              leading: CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(movie.title.substring(0, 1), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               ),
-              onPressed: () {
-                Provider.of<FavoritesProvider>(context, listen: false).toggleFavorite(movie);
-              },
+              title: Text(movie.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+              subtitle: Text('${movie.genre} • ${movie.year}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey[400])),
+              trailing: IconButton(
+                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: isFavorite ? Theme.of(context).colorScheme.secondary : Colors.grey[400]),
+                onPressed: () => Provider.of<FavoritesProvider>(context, listen: false).toggleFavorite(movie),
+              ),
             ),
           );
         },
