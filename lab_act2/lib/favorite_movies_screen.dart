@@ -9,7 +9,37 @@ class FavoriteMoviesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Favorite Movies'),
+        title: Consumer<FavoritesProvider>(
+          builder: (context, favs, child) => Text('Favorite Movies (${favs.favorites.length})'),
+        ),
+        actions: [
+          Consumer<FavoritesProvider>(
+            builder: (context, favs, child) {
+              if (favs.favorites.isEmpty) return const SizedBox.shrink();
+              return IconButton(
+                tooltip: 'Clear all favorites',
+                icon: const Icon(Icons.delete_sweep_outlined),
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Clear favorites?'),
+                      content: const Text('Remove all favorite movies? This cannot be undone.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Clear')),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    favs.clearFavorites();
+                  }
+                },
+              );
+            },
+          ),
+        ],
       ),
       body: Consumer<FavoritesProvider>(
         builder: (context, favoritesProvider, child) {

@@ -41,4 +41,12 @@ class FavoritesProvider extends ChangeNotifier {
       addFavorite(movie);
     }
   }
+
+  /// Remove all favorites.
+  void clearFavorites() {
+    if (_favorites.isNotEmpty) {
+      _favorites.clear();
+      notifyListeners();
+    }
+  }
 }
