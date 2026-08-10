@@ -17,6 +17,8 @@ class _ArticleScreenState extends State<ArticleScreen> {
   late Future<List<Article>> _futureArticles;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  final Set<int> _likedArticleIds = <int>{};
+  final Map<int, int> _commentCounts = <int, int>{};
 
   @override
   void initState() {
@@ -34,6 +36,53 @@ class _ArticleScreenState extends State<ArticleScreen> {
     final response = await ArticleService().getAllArticle();
     // Map raw list to typed models once
     return (response).map((e) => Article.fromJson(e)).toList();
+  }
+
+  void _toggleLike(int articleId) {
+    setState(() {
+      if (_likedArticleIds.contains(articleId)) {
+        _likedArticleIds.remove(articleId);
+      } else {
+        _likedArticleIds.add(articleId);
+      }
+    });
+  }
+
+  void _addComment() {}
+
+  String _getInitials(String text) {
+    final words = text.trim().split(RegExp(r'\s+'));
+    if (words.isEmpty || words.first.isEmpty) {
+      return 'A';
+    }
+
+    final initials = words
+        .take(2)
+        .map((word) => word.isNotEmpty ? word[0].toUpperCase() : '')
+        .join();
+    return initials.length > 2 ? initials.substring(0, 2) : initials;
+  }
+
+  String _getDisplayName(String text, int articleId) {
+    final names = <String>[
+      'Mina Green',
+      'Alya Snow',
+      'Kai Ryn',
+      'Nara Moon',
+      'Zoe Vale',
+      'Jules Ply',
+      'Luna Ken',
+      'Rin Sky',
+      'Mika Fox',
+      'Sora Lee',
+    ];
+
+    if (text.trim().isEmpty) {
+      return names[articleId % names.length];
+    }
+
+    final index = (articleId + text.length) % names.length;
+    return names[index];
   }
 
   @override
@@ -140,6 +189,17 @@ class _ArticleScreenState extends State<ArticleScreen> {
                   separatorBuilder: (_, _) => SizedBox(height: 8.h),
                   itemBuilder: (context, index) {
                     final article = filteredArticles[index];
+                    final isLiked = _likedArticleIds.contains(article.id);
+                    final commentCount =
+                        _commentCounts[article.id] ?? (article.id % 5 + 2);
+                    final avatarName = _getDisplayName(
+                      article.title,
+                      article.id,
+                    );
+                    final avatarColor = Color(
+                      (article.id * 0x1F2A3B + 0xFF000000) % 0xFFFFFFFF,
+                    ).withOpacity(1);
+
                     return Card(
                       elevation: 1,
                       shape: RoundedRectangleBorder(
@@ -160,48 +220,125 @@ class _ArticleScreenState extends State<ArticleScreen> {
                             horizontal: 16.w,
                             vertical: 14.h,
                           ),
-                          child: Row(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // If you have thumbnails, place an Image here.
-                              // Otherwise, just use the text area expanded.
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8.r),
-                                child: Image.network(
-                                  // This gives a unique random image for every article ID
-                                  'https://picsum.photos/seed/${article.id}/200',
-                                  height: 100.h,
-                                  width: 100.w,
-                                  fit: BoxFit.cover,
-                                  // Shows a loading spinner while the image downloads
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Icon(Icons.broken_image),
-                                ),
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 18.r,
+                                    backgroundColor: avatarColor,
+                                    child: Text(
+                                      _getInitials(avatarName),
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12.sp,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CustomText(
+                                          text: _getDisplayName(
+                                            article.title,
+                                            article.id,
+                                          ),
+                                          fontSize: 14.sp,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(width: 10.w),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Title
-                                    CustomText(
-                                      text: article.title,
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.w700,
-                                      // prevent overflow
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
+                              SizedBox(height: 10.h),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    child: Image.network(
+                                      'https://picsum.photos/seed/${article.id}/200',
+                                      height: 90.h,
+                                      width: 90.w,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) =>
+                                              Icon(Icons.broken_image),
                                     ),
-                                    SizedBox(height: 6.h),
-                                    // Body preview
-                                    CustomText(
-                                      text: article.body,
-                                      fontSize: 13.sp,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        CustomText(
+                                          text: article.title,
+                                          fontSize: 20.sp,
+                                          fontWeight: FontWeight.w700,
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        SizedBox(height: 6.h),
+                                        CustomText(
+                                          text: article.body,
+                                          fontSize: 13.sp,
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 10.h),
+                              Row(
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () => _toggleLike(article.id),
+                                    icon: Icon(
+                                      isLiked
+                                          ? Icons.favorite
+                                          : Icons.favorite_border,
+                                      size: 18.sp,
+                                      color: isLiked ? Colors.redAccent : null,
+                                    ),
+                                    label: Text('${isLiked ? 1 : 0}'),
+                                    style: TextButton.styleFrom(
+                                      minimumSize: Size.zero,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 4.h,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4.w),
+                                  TextButton.icon(
+                                    onPressed: _addComment,
+                                    icon: Icon(
+                                      Icons.mode_comment_outlined,
+                                      size: 18.sp,
+                                    ),
+                                    label: Text('$commentCount'),
+                                    style: TextButton.styleFrom(
+                                      minimumSize: Size.zero,
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 4.h,
+                                      ),
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
