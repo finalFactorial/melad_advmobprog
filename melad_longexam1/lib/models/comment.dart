@@ -5,7 +5,7 @@ class Comment {
   final String userName;
   final String userAvatar;
   final String body;
-  final int likes;
+  int likes;
   final String createdAt;
   bool isLiked;
 

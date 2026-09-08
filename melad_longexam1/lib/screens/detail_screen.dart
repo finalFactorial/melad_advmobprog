@@ -23,6 +23,7 @@ class _DetailScreenState extends State<DetailScreen> {
   User? _currentUser;
   List<Comment> _comments = [];
   bool _isLoading = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -43,25 +44,41 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _addComment() {
+  Future<void> _addComment() async {
     final text = _commentController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isSubmitting) return;
+
+    setState(() => _isSubmitting = true);
 
     final user = _currentUser;
-    final newComment = Comment(
-      id: DateTime.now().millisecondsSinceEpoch,
+    final createdComment = await _commentService.addComment(
       postId: widget.post.id,
       userId: user?.id ?? 1,
+      body: text,
       userName: user?.name ?? 'Authenticated User',
       userAvatar: user?.avatarUrl ?? 'https://i.pravatar.cc/300?img=12',
-      body: text,
-      createdAt: 'Just now',
     );
 
+    if (mounted) {
+      setState(() {
+        if (createdComment != null) {
+          _comments.add(createdComment);
+          widget.post.commentCount += 1;
+        }
+        _commentController.clear();
+        _isSubmitting = false;
+      });
+    }
+  }
+
+  void _toggleCommentLike(Comment comment) {
     setState(() {
-      _comments.add(newComment);
-      widget.post.commentCount += 1;
-      _commentController.clear();
+      comment.isLiked = !comment.isLiked;
+      if (comment.isLiked) {
+        comment.likes += 1;
+      } else {
+        comment.likes -= 1;
+      }
     });
   }
 
@@ -90,7 +107,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'Comments',
+                        'Comments (${_comments.length})',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
@@ -118,21 +135,62 @@ class _DetailScreenState extends State<DetailScreen> {
                           leading: CircleAvatar(
                             backgroundImage: NetworkImage(comment.userAvatar),
                           ),
-                          title: Text(
-                            comment.userName,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          title: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(comment.body),
-                              const SizedBox(height: 4),
+                              Text(
+                                comment.userName,
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
                               Text(
                                 comment.createdAt,
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey[600],
                                 ),
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 4),
+                              Text(comment.body),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  InkWell(
+                                    onTap: () => _toggleCommentLike(comment),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          comment.isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
+                                          size: 16,
+                                          color: comment.isLiked ? const Color(0xFF1877F2) : Colors.grey[600],
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Like',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: comment.isLiked ? FontWeight.bold : FontWeight.normal,
+                                            color: comment.isLiked ? const Color(0xFF1877F2) : Colors.grey[600],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (comment.likes > 0) ...[
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      '${comment.likes} ${comment.likes == 1 ? 'like' : 'likes'}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
                           ),
@@ -167,7 +225,13 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.send, color: Colors.blue),
+                  icon: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.send, color: Color(0xFF1877F2)),
                   onPressed: _addComment,
                 ),
               ],
