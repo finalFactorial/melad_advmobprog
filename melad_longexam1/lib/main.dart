@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'constants.dart';
-import 'screens/signin_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -54,7 +54,7 @@ class _MyAppState extends State<MyApp> {
             ),
           ),
           themeMode: ThemeMode.system,
-          home: const SigninScreen(),
+          home: const SplashScreen(),
         );
       },
     );

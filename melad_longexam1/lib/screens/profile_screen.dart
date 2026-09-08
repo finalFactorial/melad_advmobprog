@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_info.dart';
+import 'signin_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,13 +24,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     setState(() => _isLoading = true);
-    final user = await _userService.getUserById(1);
+    final user = await _userService.getCurrentUser();
     if (mounted) {
       setState(() {
         _user = user;
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _logout() async {
+    await _userService.logout();
+    if (!mounted) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const SigninScreen()),
+      (route) => false,
+    );
   }
 
   @override
@@ -85,6 +96,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          // Logout Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _logout,
+                icon: const Icon(Icons.logout, color: Colors.white),
+                label: const Text('Log Out', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           const Divider(),
           Padding(
             padding: const EdgeInsets.all(16.0),
