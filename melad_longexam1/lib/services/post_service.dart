@@ -25,6 +25,27 @@ class PostService {
     }
   }
 
+  Future<List<Post>> getPostsByUserId(int userId) async {
+    try {
+      final uri = Uri.parse('$host/posts/user/$userId');
+      final response = await http.get(uri, headers: {'Content-Type': 'application/json'}).timeout(
+        const Duration(seconds: 5),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List postsJson = data['posts'] ?? [];
+        if (postsJson.isNotEmpty) {
+          return postsJson.map((p) => Post.fromJson(p)).toList();
+        }
+      }
+      // Fall back to sample mock user posts if endpoint returns empty list or fails
+      return _getMockPosts().where((p) => p.userId == userId || userId == 1).toList();
+    } catch (_) {
+      return _getMockPosts().where((p) => p.userId == userId || userId == 1).toList();
+    }
+  }
+
   List<Post> _getMockPosts() {
     return [
       Post(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'newsfeed_screen.dart';
 import 'profile_screen.dart';
 import 'notification_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const Center(child: Text('Marketplace Tab')),
     const ProfileScreen(),
     const NotificationScreen(),
-    const Center(child: Text('Menu Tab')),
+    const SettingsScreen(),
   ];
 
   @override
@@ -43,6 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.message),
             onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
         ],
       ),

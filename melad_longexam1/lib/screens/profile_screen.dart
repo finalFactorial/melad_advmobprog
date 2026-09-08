@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import '../models/post.dart';
 import '../models/user.dart';
+import '../services/post_service.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_info.dart';
-import 'signin_screen.dart';
+import '../widgets/post_card.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,33 +16,36 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
+  final PostService _postService = PostService();
+
   User? _user;
+  List<Post> _userPosts = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadProfileData();
   }
 
-  Future<void> _loadProfile() async {
+  Future<void> _loadProfileData() async {
     setState(() => _isLoading = true);
     final user = await _userService.getCurrentUser();
+    final posts = await _postService.getPostsByUserId(user.id);
+
     if (mounted) {
       setState(() {
         _user = user;
+        _userPosts = posts;
         _isLoading = false;
       });
     }
   }
 
-  Future<void> _logout() async {
-    await _userService.logout();
-    if (!mounted) return;
-    Navigator.pushAndRemoveUntil(
+  void _openSettings() {
+    Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const SigninScreen()),
-      (route) => false,
+      MaterialPageRoute(builder: (context) => const SettingsScreen()),
     );
   }
 
@@ -53,6 +59,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return SingleChildScrollView(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Cover Photo & Avatar Header
           Stack(
@@ -79,39 +86,54 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 60),
-          Text(
-            user.name,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          Text(
-            '@${user.username}',
-            style: const TextStyle(color: Colors.grey),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Text(
-              user.bio,
-              textAlign: TextAlign.center,
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  user.name,
+                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '@${user.username}',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    user.bio,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
-          // Logout Button
+          // Action Buttons: Edit Profile & Settings
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _logout,
-                icon: const Icon(Icons.logout, color: Colors.white),
-                label: const Text('Log Out', style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.add, color: Colors.white),
+                    label: const Text('Add to story', style: TextStyle(color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1877F2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                IconButton.filledTonal(
+                  onPressed: _openSettings,
+                  icon: const Icon(Icons.settings),
+                  tooltip: 'Settings',
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -132,6 +154,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
           ),
+          const Divider(thickness: 8, color: Color(0xFFF0F2F5)),
+          // User Posts Section
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Posts",
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                ),
+                Text(
+                  '${_userPosts.length} posts',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          if (_userPosts.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+              child: Center(
+                child: Text(
+                  'No posts yet.',
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _userPosts.length,
+              itemBuilder: (context, index) {
+                return PostCard(post: _userPosts[index]);
+              },
+            ),
         ],
       ),
     );

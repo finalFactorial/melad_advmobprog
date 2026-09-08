@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/post.dart';
 import '../models/comment.dart';
+import '../models/user.dart';
 import '../services/comment_service.dart';
+import '../services/user_service.dart';
 import '../widgets/post_card.dart';
 
 class DetailScreen extends StatefulWidget {
@@ -15,21 +17,26 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   final CommentService _commentService = CommentService();
+  final UserService _userService = UserService();
   final TextEditingController _commentController = TextEditingController();
+
+  User? _currentUser;
   List<Comment> _comments = [];
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadComments();
+    _loadData();
   }
 
-  Future<void> _loadComments() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
+    final user = await _userService.getCurrentUser();
     final comments = await _commentService.getComments(widget.post.id);
     if (mounted) {
       setState(() {
+        _currentUser = user;
         _comments = comments;
         _isLoading = false;
       });
@@ -40,12 +47,13 @@ class _DetailScreenState extends State<DetailScreen> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
+    final user = _currentUser;
     final newComment = Comment(
       id: DateTime.now().millisecondsSinceEpoch,
       postId: widget.post.id,
-      userId: 1,
-      userName: 'Current User',
-      userAvatar: 'https://i.pravatar.cc/300?img=12',
+      userId: user?.id ?? 1,
+      userName: user?.name ?? 'Authenticated User',
+      userAvatar: user?.avatarUrl ?? 'https://i.pravatar.cc/300?img=12',
       body: text,
       createdAt: 'Just now',
     );
