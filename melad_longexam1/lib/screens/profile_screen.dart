@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import '../models/comment.dart';
 import '../models/post.dart';
 import '../models/user.dart';
+import '../services/comment_service.dart';
 import '../services/post_service.dart';
 import '../services/user_service.dart';
 import '../widgets/custom_info.dart';
@@ -28,10 +30,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadProfileData();
   }
 
+  final CommentService _commentService = CommentService();
+  final Map<int, List<Comment>> _postComments = {};
+
   Future<void> _loadProfileData() async {
     setState(() => _isLoading = true);
     final user = await _userService.getCurrentUser();
     final rawPosts = await _postService.getPostsByUserId(user.id);
+
+    // Dynamically fetch and sync comments & comment count for each post
+    final Map<int, List<Comment>> postCommentsMap = {};
+    for (final post in rawPosts) {
+      final comments = await _commentService.getComments(post.id);
+      postCommentsMap[post.id] = comments;
+      post.commentCount = comments.length;
+    }
+
     final posts = rawPosts
         .map((p) => p.copyWithUser(name: user.name, avatarUrl: user.avatarUrl))
         .toList();
@@ -40,6 +54,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _user = user;
         _userPosts = posts;
+        _postComments.clear();
+        _postComments.addAll(postCommentsMap);
         _isLoading = false;
       });
     }
