@@ -9,8 +9,8 @@ class Post {
   final String updatedAt;
   
   // UI extended attributes
-  final String authorName;
-  final String authorAvatar;
+  String authorName;
+  String authorAvatar;
   final String? imageUrl;
   int commentCount;
   final int shareCount;
@@ -32,6 +32,25 @@ class Post {
     this.shareCount = 3,
     this.isLiked = false,
   });
+
+  Post copyWithUser({required String name, required String avatarUrl}) {
+    return Post(
+      id: id,
+      postId: postId,
+      userId: userId,
+      body: body,
+      likes: likes,
+      dislikes: dislikes,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+      authorName: name,
+      authorAvatar: avatarUrl,
+      imageUrl: imageUrl,
+      commentCount: commentCount,
+      shareCount: shareCount,
+      isLiked: isLiked,
+    );
+  }
 
   factory Post.fromJson(Map<String, dynamic> json) {
     final rawId = json['id'] ?? 0;

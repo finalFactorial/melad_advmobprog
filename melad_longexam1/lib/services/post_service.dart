@@ -39,11 +39,31 @@ class PostService {
           return postsJson.map((p) => Post.fromJson(p)).toList();
         }
       }
-      // Fall back to sample mock user posts if endpoint returns empty list or fails
-      return _getMockPosts().where((p) => p.userId == userId || userId == 1).toList();
-    } catch (_) {
-      return _getMockPosts().where((p) => p.userId == userId || userId == 1).toList();
+    } catch (_) {}
+
+    // Fall back to ensuring at least one post is returned for the user
+    final mockMatches = _getMockPosts().where((p) => p.userId == userId).toList();
+    if (mockMatches.isNotEmpty) {
+      return mockMatches;
     }
+
+    return [
+      Post(
+        id: 1000 + userId,
+        postId: 1000 + userId,
+        userId: userId,
+        authorName: 'Logged In User',
+        authorAvatar: 'https://i.pravatar.cc/300?img=${userId % 70}',
+        body: 'Welcome to my profile! Excited to share my thoughts and updates here. 🚀✨',
+        imageUrl: 'https://picsum.photos/800/500?random=$userId',
+        likes: 124,
+        dislikes: 1,
+        commentCount: 18,
+        shareCount: 5,
+        createdAt: '1 day ago',
+        updatedAt: '1 day ago',
+      ),
+    ];
   }
 
   List<Post> _getMockPosts() {

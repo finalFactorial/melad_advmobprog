@@ -31,7 +31,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfileData() async {
     setState(() => _isLoading = true);
     final user = await _userService.getCurrentUser();
-    final posts = await _postService.getPostsByUserId(user.id);
+    final rawPosts = await _postService.getPostsByUserId(user.id);
+    final posts = rawPosts
+        .map((p) => p.copyWithUser(name: user.name, avatarUrl: user.avatarUrl))
+        .toList();
 
     if (mounted) {
       setState(() {
@@ -148,9 +151,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                CustomInfo(icon: Icons.work, label: 'Work', value: user.work),
-                CustomInfo(icon: Icons.school, label: 'Education', value: user.education),
-                CustomInfo(icon: Icons.home, label: 'Lives in', value: user.livesIn),
+                if (user.work.isNotEmpty) CustomInfo(icon: Icons.work, label: 'Work', value: user.work),
+                if (user.education.isNotEmpty) CustomInfo(icon: Icons.school, label: 'Education', value: user.education),
+                if (user.livesIn.isNotEmpty) CustomInfo(icon: Icons.home, label: 'Lives in', value: user.livesIn),
+                CustomInfo(icon: Icons.people, label: 'Followed by', value: '${user.followerCount} people'),
               ],
             ),
           ),

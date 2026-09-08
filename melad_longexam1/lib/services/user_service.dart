@@ -25,10 +25,20 @@ class UserService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
-        final user = User.fromJson(data);
+        final int userId = data['id'] ?? 1;
         final token = data['accessToken'] ?? data['token'] ?? '';
-        await saveUserSession(user, token);
-        return user;
+        
+        // Fetch full profile details (address, company, university) from /users/$id
+        User fullUser = User.fromJson(data);
+        try {
+          final userDetailRes = await http.get(Uri.parse('$host/users/$userId')).timeout(const Duration(seconds: 4));
+          if (userDetailRes.statusCode == 200) {
+            fullUser = User.fromJson(jsonDecode(userDetailRes.body));
+          }
+        } catch (_) {}
+
+        await saveUserSession(fullUser, token);
+        return fullUser;
       }
       return null;
     } catch (_) {
