@@ -1,11 +1,52 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants.dart';
 import '../models/post.dart';
 
 class PostService {
+  static const String keyPostLikes = 'persisted_post_likes';
+  static const String keyPostIsLiked = 'persisted_post_is_liked';
+
+  /// Save post like state to SharedPreferences
+  Future<void> savePostLike(int postId, int likes, bool isLiked) async {
+    final prefs = await SharedPreferences.getInstance();
+    final likesMapJson = prefs.getString(keyPostLikes) ?? '{}';
+    final isLikedMapJson = prefs.getString(keyPostIsLiked) ?? '{}';
+
+    final Map<String, dynamic> likesMap = jsonDecode(likesMapJson);
+    final Map<String, dynamic> isLikedMap = jsonDecode(isLikedMapJson);
+
+    likesMap[postId.toString()] = likes;
+    isLikedMap[postId.toString()] = isLiked;
+
+    await prefs.setString(keyPostLikes, jsonEncode(likesMap));
+    await prefs.setString(keyPostIsLiked, jsonEncode(isLikedMap));
+  }
+
+  /// Apply persisted likes to post list
+  Future<void> _applyPersistedPostLikes(List<Post> posts) async {
+    final prefs = await SharedPreferences.getInstance();
+    final likesMapJson = prefs.getString(keyPostLikes) ?? '{}';
+    final isLikedMapJson = prefs.getString(keyPostIsLiked) ?? '{}';
+
+    final Map<String, dynamic> likesMap = jsonDecode(likesMapJson);
+    final Map<String, dynamic> isLikedMap = jsonDecode(isLikedMapJson);
+
+    for (final post in posts) {
+      final key = post.id.toString();
+      if (likesMap.containsKey(key)) {
+        post.likes = (likesMap[key] as num).toInt();
+      }
+      if (isLikedMap.containsKey(key)) {
+        post.isLiked = isLikedMap[key] as bool;
+      }
+    }
+  }
+
   Future<List<Post>> getPosts({int limit = 30, int skip = 0}) async {
+    List<Post> posts = [];
     try {
       final uri = Uri.parse('$host/posts?limit=$limit&skip=$skip');
       final response = await http.get(uri, headers: {'Content-Type': 'application/json'}).timeout(
@@ -15,17 +56,19 @@ class PostService {
       if (response.statusCode == 200) {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List postsJson = data['posts'] ?? [];
-        return postsJson.map((p) => Post.fromJson(p)).toList();
+        posts = postsJson.map((p) => Post.fromJson(p)).toList();
       } else {
-        return _getMockPosts();
+        posts = _getMockPosts();
       }
     } catch (_) {
-      // Fallback to offline mock posts if service API is unavailable
-      return _getMockPosts();
+      posts = _getMockPosts();
     }
+    await _applyPersistedPostLikes(posts);
+    return posts;
   }
 
   Future<List<Post>> getPostsByUserId(int userId) async {
+    List<Post> posts = [];
     try {
       final uri = Uri.parse('$host/posts/user/$userId');
       final response = await http.get(uri, headers: {'Content-Type': 'application/json'}).timeout(
@@ -36,34 +79,37 @@ class PostService {
         final Map<String, dynamic> data = jsonDecode(response.body);
         final List postsJson = data['posts'] ?? [];
         if (postsJson.isNotEmpty) {
-          return postsJson.map((p) => Post.fromJson(p)).toList();
+          posts = postsJson.map((p) => Post.fromJson(p)).toList();
         }
       }
     } catch (_) {}
 
-    // Fall back to ensuring at least one post is returned for the user
-    final mockMatches = _getMockPosts().where((p) => p.userId == userId).toList();
-    if (mockMatches.isNotEmpty) {
-      return mockMatches;
+    if (posts.isEmpty) {
+      final mockMatches = _getMockPosts().where((p) => p.userId == userId).toList();
+      if (mockMatches.isNotEmpty) {
+        posts = mockMatches;
+      } else {
+        posts = [
+          Post(
+            id: 1000 + userId,
+            postId: 1000 + userId,
+            userId: userId,
+            authorName: 'Logged In User',
+            authorAvatar: 'https://i.pravatar.cc/300?img=${userId % 70}',
+            body: 'Welcome to my profile! Excited to share my thoughts and updates here. 🚀✨',
+            imageUrl: 'https://picsum.photos/800/500?random=$userId',
+            likes: 124,
+            dislikes: 1,
+            commentCount: 18,
+            shareCount: 5,
+            createdAt: '1 day ago',
+            updatedAt: '1 day ago',
+          ),
+        ];
+      }
     }
-
-    return [
-      Post(
-        id: 1000 + userId,
-        postId: 1000 + userId,
-        userId: userId,
-        authorName: 'Logged In User',
-        authorAvatar: 'https://i.pravatar.cc/300?img=${userId % 70}',
-        body: 'Welcome to my profile! Excited to share my thoughts and updates here. 🚀✨',
-        imageUrl: 'https://picsum.photos/800/500?random=$userId',
-        likes: 124,
-        dislikes: 1,
-        commentCount: 18,
-        shareCount: 5,
-        createdAt: '1 day ago',
-        updatedAt: '1 day ago',
-      ),
-    ];
+    await _applyPersistedPostLikes(posts);
+    return posts;
   }
 
   List<Post> _getMockPosts() {

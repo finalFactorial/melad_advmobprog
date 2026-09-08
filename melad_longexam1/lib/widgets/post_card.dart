@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../models/post.dart';
 import '../screens/detail_screen.dart';
+import '../services/post_service.dart';
 import 'custom_font.dart';
 import 'custom_inkwell_button.dart';
 
@@ -37,6 +38,7 @@ class _PostCardState extends State<PostCard> {
       }
       widget.post.likes = _likeCount;
     });
+    PostService().savePostLike(widget.post.id, _likeCount, _isLiked);
   }
 
   void _openDetailScreen() {
@@ -150,20 +152,10 @@ class _PostCardState extends State<PostCard> {
                 ),
                 GestureDetector(
                   onTap: _openDetailScreen,
-                  child: Row(
-                    children: [
-                      CustomFont(
-                        text: '${widget.post.commentCount} comments',
-                        fontSize: 13,
-                        color: FBColors.textSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      CustomFont(
-                        text: '${widget.post.shareCount} shares',
-                        fontSize: 13,
-                        color: FBColors.textSecondary,
-                      ),
-                    ],
+                  child: CustomFont(
+                    text: '${widget.post.commentCount} comments',
+                    fontSize: 13,
+                    color: FBColors.textSecondary,
                   ),
                 ),
               ],

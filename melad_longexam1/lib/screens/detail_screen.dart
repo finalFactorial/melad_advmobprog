@@ -80,6 +80,7 @@ class _DetailScreenState extends State<DetailScreen> {
         comment.likes -= 1;
       }
     });
+    _commentService.saveCommentLike(comment.id, comment.likes, comment.isLiked);
   }
 
   @override
